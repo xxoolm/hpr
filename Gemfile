@@ -6,20 +6,23 @@ source 'https://rubygems.org'
 git_source(:github) { |repo_name| "https://github.com/#{repo_name}" }
 
 # Web Services
-gem 'puma', '~> 5.6.4'
-gem 'sidekiq', '~> 6.4.2'
-gem 'sinatra', '~> 2.2.0'
-gem 'sinatra-contrib', '~> 2.2.0'
+gem 'puma', '~> 6.4.2'
+gem 'sinatra', '~> 3.1.0'
+gem 'sinatra-contrib', '~> 3.1.0'
+
+# Background Job Service
+gem 'sidekiq', '~> 7.1.4'
+gem 'sidekiq-failures', '~> 1.0.4'
 
 # Database
-gem 'activerecord', '~> 7.0.3'
-gem 'sqlite3', '~> 1.4.4'
+gem 'activerecord', '~> 7.1.3'
+gem 'sqlite3', '~> 1.6.9'
 
 # Tools
 gem 'chronic_duration', '~> 0.10.6'
-gem 'commander', '~> 4.6.0'
-gem 'git', '~> 1.11.0'
-gem 'gitlab', '~> 4.18.0'
+gem 'commander', '~> 5.0.0'
+gem 'git', '~> 1.19.1'
+gem 'gitlab', '~> 4.19.0'
 gem 'rake'
 gem 'sentry-ruby'
 gem 'sentry-sidekiq'

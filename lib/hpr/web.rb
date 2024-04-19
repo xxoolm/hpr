@@ -1,4 +1,4 @@
-# frozen_string_literal: tru
+# frozen_string_literal: true
 
 require 'sinatra'
 require 'sinatra/json'
@@ -13,7 +13,7 @@ module Hpr
     helpers Sinatra::Streaming
 
     configure do
-      use Rack::CommonLogger, Logger.new(STDOUT)
+      use Rack::CommonLogger, Logger.new($stdout)
       use Sentry::Rack::CaptureExceptions
 
       if Configuration.basic_auth?
@@ -31,8 +31,7 @@ module Hpr
     end
 
     get '/info' do
-      json hpr: { version: Hpr::VERSION },
-           jobs: jobs
+      json hpr: { version: Hpr::VERSION }, jobs: jobs
     end
 
     get '/info/scheduled' do
@@ -41,6 +40,10 @@ module Hpr
 
     get '/info/busy' do
       json busy_jobs
+    end
+
+    get '/info/retry_failtures' do
+      json retry_failures_jobs
     end
 
     unless Hpr::Configuration.api.disable_config
@@ -166,27 +169,28 @@ module Hpr
       {
         processed: sidekiq_stats.processed,
         failed: sidekiq_stats.failed,
+        retry_failures: Sidekiq::Failures.count,
         busy: sidekiq_stats.workers_size,
         processes: sidekiq_stats.processes_size,
         enqueued: sidekiq_stats.enqueued,
         scheduled: sidekiq_stats.scheduled_size,
         retries: sidekiq_stats.retry_size,
         dead: sidekiq_stats.dead_size,
-        default_latency: sidekiq_stats.default_queue_latency
+        default_latency: sidekiq_stats.default_queue_latency,
       }
     end
 
     def busy_jobs(name = nil)
-      workers = Sidekiq::Workers.new
+      workers = Sidekiq::WorkSet.new
       entry = []
       workers.each do |process, thread, msg|
-        job = Sidekiq::Job.new(msg['payload'])
-        worker_type = job.display_class[5..-7].downcase
+        job = Sidekiq::JobRecord.new(msg['payload'])
+        worker_type = job.display_class[5..].downcase
         repository = job.display_args[0]
 
         stats = {
           jid: job.jid,
-          job: worker_type,
+          worker: worker_type,
           repository: repository,
           process: process,
           thread: thread,
@@ -205,8 +209,23 @@ module Hpr
       scheduled_set = Sidekiq::ScheduledSet.new
       scheduled_set.each_with_object([]) do |retri, obj|
         obj << {
-          name: JSON.parse(retri.value)['args'].first,
+          name: retri.item['args'].first,
           scheduled_at: retri.at
+        }
+      end
+    end
+
+    def retry_failures_jobs
+      failure_set = Sidekiq::Failures::FailureSet.new
+      failure_set.each_with_object([]) do |set, obj|
+        data = set.item
+        obj << {
+          name: data['args'].first,
+          worker: data['class'][5..].downcase,
+          error_class: data['error_class'],
+          error_message: data['error_message'],
+          failed_at: data['failed_at'],
+          aaa: set
         }
       end
     end

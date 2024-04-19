@@ -18,7 +18,7 @@ jobs:
       id: version
       run: echo "::set-output name=version::$(echo ${{ github.ref }} | sed 's/refs\/tags\///' | sed 's/v//')"
     - name: Publish to Registry
-      uses: elgohr/Publish-Docker-Github-Action@master
+      uses: elgohr/Publish-Docker-Github-Action@v5
       env:
         VCS_REF: ${{ github.sha }}
         VERSION: ${{ github.ref }}
@@ -28,9 +28,9 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
         buildargs: BUILD_DATE,VCS_REF,VERSION
-    - name: Docker Hub Description
-      uses: peter-evans/dockerhub-description@v2.1.0
-      env:
-        DOCKERHUB_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-        DOCKERHUB_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        DOCKERHUB_REPOSITORY: icyleafcn/hpr
+    - name: Update Docker Hub Description
+      uses: peter-evans/dockerhub-description@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        repository: icyleafcn/hpr
